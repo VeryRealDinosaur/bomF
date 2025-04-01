@@ -23,7 +23,12 @@ export const GameProvider = ({ children }) => {
     const [connectionError, setConnectionError] = useState(null);
 
     useEffect(() => {
-        const serverUrl = import.meta.env.VITE_SERVER_URL || 'http://localhost:3001';
+        // Determine the server URL based on the environment
+        const isDevelopment = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+        const serverUrl = isDevelopment 
+            ? 'http://localhost:3001'
+            : 'https://bombafinal.onrender.com'; // Replace with your actual server URL
+
         console.log('Connecting to server:', serverUrl);
         
         const newSocket = io(serverUrl, {
