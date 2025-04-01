@@ -20,24 +20,33 @@ export const GameProvider = ({ children }) => {
     });
     const [chatMessages, setChatMessages] = useState([]);
     const [connectedToServer, setConnectedToServer] = useState(false);
+    const [connectionError, setConnectionError] = useState(null);
 
-    // Connect to the server
     useEffect(() => {
-        // Use the server URL from environment or fallback to localhost
-        const serverUrl = import.meta.env.VITE_SERVER_URL || 'https://bombafinal.onrender.com';
-        const newSocket = io(serverUrl);
-
-        // Debug connection issues
-        console.log('Attempting to connect to server...');
+        const serverUrl = import.meta.env.VITE_SERVER_URL || 'http://localhost:3001';
+        console.log('Connecting to server:', serverUrl);
+        
+        const newSocket = io(serverUrl, {
+            reconnection: true,
+            reconnectionAttempts: 5,
+            reconnectionDelay: 1000,
+        });
 
         newSocket.on('connect', () => {
             console.log('Connected to server with ID:', newSocket.id);
             setConnectedToServer(true);
+            setConnectionError(null);
             setSocket(newSocket);
         });
 
         newSocket.on('connect_error', (error) => {
             console.error('Connection error:', error);
+            setConnectedToServer(false);
+            setConnectionError('Failed to connect to server. Please check your connection and try again.');
+        });
+
+        newSocket.on('disconnect', (reason) => {
+            console.log('Disconnected from server:', reason);
             setConnectedToServer(false);
         });
 
@@ -75,14 +84,10 @@ export const GameProvider = ({ children }) => {
             setChatMessages(prev => [...prev, message]);
         });
 
-        newSocket.on('disconnect', () => {
-            console.log('Disconnected from server');
-            setConnectedToServer(false);
-        });
-
         return () => {
-            console.log('Cleaning up socket connection');
-            newSocket.disconnect();
+            if (newSocket) {
+                newSocket.close();
+            }
         };
     }, []);
 
@@ -141,16 +146,20 @@ export const GameProvider = ({ children }) => {
         }
     };
 
+    const value = {
+        socket,
+        gameState,
+        chatMessages,
+        connectedToServer,
+        connectionError,
+        joinGame,
+        sendChatMessage,
+        solveModule,
+        addStrike,
+    };
+
     return (
-        <GameContext.Provider value={{
-            gameState,
-            chatMessages,
-            connectedToServer,
-            joinGame,
-            sendChatMessage,
-            solveModule,
-            addStrike
-        }}>
+        <GameContext.Provider value={value}>
             {children}
         </GameContext.Provider>
     );
