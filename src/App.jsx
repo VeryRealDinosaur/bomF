@@ -19,10 +19,4 @@ function App() {
     );
 }
 
-export default {
-  build: {
-    rollupOptions: {
-      external: ['react-router-dom']
-    }
-  }
-}
+export default App;
